@@ -24,8 +24,12 @@ const quick = [
         <p class="lead">하나님의 영광을 반사하는 공동체.<br />{church.name}에 오신 것을 환영합니다.</p>
       </div>
       <div class="slides" data-slides>
-        {c.hero.map((src, i) => (
-          <div class:list={['slide', { ph: !src, on: i === 0 }]}>{src && <img class="cover" src={src} alt="" loading={i ? 'lazy' : 'eager'} />}</div>
+        {c.hero.map((h, i) => (
+          <div class:list={['slide', { ph: !h.src, on: i === 0 }]}>
+            {h.video
+              ? <video class="cover" src={h.src} poster={h.poster} muted playsinline preload={i ? 'none' : 'auto'} autoplay={i === 0}></video>
+              : h.src && <img class="cover" src={h.src} alt="" loading={i ? 'lazy' : 'eager'} />}
+          </div>
         ))}
         <span class="count"><b data-cur>01</b> / {String(c.hero.length).padStart(2, '0')}</span>
       </div>
@@ -143,18 +147,32 @@ const quick = [
 </Base>
 
 <script>
+  // 사진은 5초씩, 영상은 끝까지 재생한 뒤 다음 장으로 넘어간다.
   const root = document.querySelector('[data-slides]');
-  const slides = root ? [...root.querySelectorAll('.slide')] : [];
+  const slides = root ? [...root.querySelectorAll<HTMLElement>('.slide')] : [];
   const cur = root?.querySelector('[data-cur]');
   let i = 0;
-  if (slides.length > 1) {
-    setInterval(() => {
-      slides[i].classList.remove('on');
-      i = (i + 1) % slides.length;
-      slides[i].classList.add('on');
-      if (cur) cur.textContent = String(i + 1).padStart(2, '0');
-    }, 5000);
-  }
+  let timer = 0;
+  const show = (n: number) => {
+    slides[i].classList.remove('on');
+    slides[i].querySelector('video')?.pause();
+    i = n % slides.length;
+    slides[i].classList.add('on');
+    if (cur) cur.textContent = String(i + 1).padStart(2, '0');
+    schedule();
+  };
+  const schedule = () => {
+    clearTimeout(timer);
+    const video = slides[i].querySelector('video');
+    if (!video) { if (slides.length > 1) timer = window.setTimeout(() => show(i + 1), 5000); return; }
+    video.currentTime = 0;
+    video.loop = slides.length === 1;
+    video.play().catch(() => {});
+    video.onended = () => show(i + 1);
+    // 영상이 불러와지지 않으면 넘어간다
+    timer = window.setTimeout(() => { if (video.readyState < 2) show(i + 1); }, 8000);
+  };
+  if (slides.length) schedule();
 </script>
 
 <style>

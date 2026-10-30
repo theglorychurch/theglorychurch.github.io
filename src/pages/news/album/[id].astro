@@ -1,6 +1,6 @@
 ---
 import Base from '../../../layouts/Base.astro';
-import { getContent, fmtFull, type Album } from '../../../lib/content';
+import { getContent, fmtFull, driveImg, type Album } from '../../../lib/content';
 import { nextgen } from '../../../data/church';
 
 export async function getStaticPaths() {
@@ -9,6 +9,7 @@ export async function getStaticPaths() {
 }
 
 const { album } = Astro.props as { album: Album };
+const driveImgWide = (id: string) => driveImg(id, 2400);
 const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[album.dept].title} 이야기` } : { href: '/news/album/', label: '교회앨범' };
 ---
 <Base title={album.title} description={album.text[0]?.slice(0, 120)}>
@@ -18,37 +19,68 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
     <h1>{album.title}</h1>
     {album.text.length > 0 && <div class="prose text">{album.text.map((p) => <p>{p.split('\n').map((l, i) => <>{i > 0 && <br />}{l}</>)}</p>)}</div>}
   </div>
-  <section class="wrap photos">
-    {album.photos.map((p) => p.video ? (
-      <button class="item video" data-src={p.src} aria-label="영상 재생">
-        <img src={p.thumb} alt="" loading="lazy" /><span class="play" aria-hidden="true"></span>
-      </button>
-    ) : (
-      <a class:list={['item', { ph: !p.thumb }]} href={p.src || undefined} target="_blank" rel="noopener">
-        {p.thumb && <img src={p.thumb} alt="" loading="lazy" />}
-      </a>
-    ))}
+  <section class="wrap gallery">
+    {album.lead && (
+      album.lead.video
+        ? <button class="lead item video" data-src={album.lead.src} data-embed={album.lead.embed} aria-label="영상 재생"><img class="cover" src={album.lead.thumb} alt="" /><span class="play" aria-hidden="true"></span></button>
+        : <a class="lead item" href={album.lead.src} target="_blank" rel="noopener"><img class="cover" src={driveImgWide(album.lead.id)} alt="" /></a>
+    )}
+    <div class="collage">
+      {album.photos.map((p) => (
+        <div class="cell" style={`--r:${p.ratio.toFixed(3)}`}>
+          {p.video ? (
+            <button class="item video" data-src={p.src} data-embed={p.embed} aria-label="영상 재생">
+              <img class="cover" src={p.thumb} alt="" loading="lazy" /><span class="play" aria-hidden="true"></span>
+            </button>
+          ) : (
+            <a class:list={['item', { ph: !p.thumb }]} href={p.src || undefined} target="_blank" rel="noopener">
+              {p.thumb && <img class="cover" src={p.thumb} alt="" loading="lazy" />}
+            </a>
+          )}
+        </div>
+      ))}
+    </div>
   </section>
 
   <dialog class="player" aria-label="영상">
     <button class="close" aria-label="닫기">×</button>
-    <div class="frame"><iframe title="앨범 영상" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+    <div class="frame"><video controls playsinline></video><iframe title="앨범 영상" allow="autoplay; fullscreen" allowfullscreen hidden></iframe></div>
   </dialog>
 </Base>
 
 <script>
+  // 누르면 영상 파일을 바로 재생하고, 불러오지 못하면 드라이브 플레이어로 바꾼다.
   const dialog = document.querySelector<HTMLDialogElement>('dialog.player')!;
+  const video = dialog.querySelector('video')!;
   const frame = dialog.querySelector('iframe')!;
+  let embed = '';
+  const useEmbed = () => {
+    if (!embed || !frame.hidden) return;
+    video.pause();
+    video.hidden = true;
+    frame.hidden = false;
+    frame.src = embed;
+  };
+  video.addEventListener('error', useEmbed);
   document.querySelectorAll<HTMLButtonElement>('.item.video').forEach((b) =>
     b.addEventListener('click', () => {
-      frame.src = b.dataset.src!;
+      embed = b.dataset.embed ?? '';
+      frame.hidden = true;
+      video.hidden = false;
+      video.src = b.dataset.src!;
       dialog.showModal();
+      video.play().catch(() => {});
     }),
   );
   const close = () => dialog.close();
   dialog.querySelector('.close')!.addEventListener('click', close);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
-  dialog.addEventListener('close', () => { frame.src = ''; });
+  dialog.addEventListener('close', () => {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    frame.src = '';
+  });
 </script>
 
 <style>
@@ -57,23 +89,31 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
   .date { display: block; margin-top: 40px; color: var(--gold); }
   h1 { font-family: var(--head); font-size: 48px; font-weight: 800; margin-top: 10px; letter-spacing: -.02em; }
   .text { max-width: 760px; margin-top: 28px; }
-  .photos { columns: 3; column-gap: 12px; padding-bottom: 110px; }
-  .item { display: block; width: 100%; margin-bottom: 12px; break-inside: avoid; position: relative; border: 0; padding: 0; background: none; cursor: pointer; }
-  .item.ph { aspect-ratio: 4/3; }
-  .item img { width: 100%; }
+  .gallery { padding-bottom: 110px; }
+  .item { display: block; width: 100%; height: 100%; position: relative; border: 0; padding: 0; background: #eee; cursor: pointer; overflow: hidden; }
+  .item img { transition: transform .4s; }
+  .item:hover img { transform: scale(1.03); }
+  .lead { aspect-ratio: 16/9; margin-bottom: 8px; }
+  /* 행 높이를 맞춘 콜라주: 칸 너비를 사진 비율에 비례해 늘린다 */
+  .collage { display: flex; flex-wrap: wrap; gap: 8px; }
+  .collage::after { content: ''; flex-grow: 999; }
+  .cell { flex-grow: calc(var(--r) * 100); width: calc(var(--r) * 260px); aspect-ratio: var(--r); max-height: 520px; }
   .play { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(0, 0, 0, .55); }
   .play::after { content: ''; position: absolute; left: 26px; top: 20px; border-left: 18px solid #fff; border-top: 12px solid transparent; border-bottom: 12px solid transparent; }
   .video:hover .play { background: var(--gold); }
   .player { border: 0; padding: 0; background: transparent; width: min(1000px, 92vw); max-height: 92vh; overflow: visible; }
   .player::backdrop { background: rgba(0, 0, 0, .85); }
   .frame { aspect-ratio: 16/9; background: #000; }
-  .frame iframe { width: 100%; height: 100%; border: 0; }
+  .frame iframe, .frame video { width: 100%; height: 100%; border: 0; display: block; }
+  .frame [hidden] { display: none; }
   .close { position: absolute; top: -44px; right: 0; background: none; border: 0; color: #fff; font-size: 36px; line-height: 1; cursor: pointer; }
   @media (max-width: 760px) {
     .head { padding-top: 32px; }
     h1 { font-size: 30px; }
-    .photos { columns: 2; column-gap: 6px; padding-bottom: 72px; }
-    .item { margin-bottom: 6px; }
+    .gallery { padding-bottom: 72px; margin: 0; padding-left: 0; padding-right: 0; }
+    .lead { aspect-ratio: 4/3; margin-bottom: 4px; }
+    .collage { gap: 4px; }
+    .cell { width: calc(var(--r) * 150px); }
     .play { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
     .play::after { left: 19px; top: 14px; border-left-width: 14px; border-top-width: 10px; border-bottom-width: 10px; }
   }

@@ -5,8 +5,9 @@ import { nextgen } from '../data/church';
 interface Props { albums: Album[]; showDept?: boolean }
 const { albums, showDept = true } = Astro.props;
 const count = (a: Album) => {
-  const videos = a.photos.filter((p) => p.video).length;
-  const photos = a.photos.length - videos;
+  const all = a.lead ? [a.lead, ...a.photos] : a.photos;
+  const videos = all.filter((p) => p.video).length;
+  const photos = all.length - videos;
   return [photos && `사진 ${photos}장`, videos && `영상 ${videos}개`].filter(Boolean).join(' · ');
 };
 const fresh = new Date(Date.now() - NEW_DAYS * 864e5).toISOString().slice(0, 10);

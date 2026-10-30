@@ -13,7 +13,8 @@ const slug = Astro.params.slug as Dept;
 const g = nextgen[slug];
 const { albums } = await getContent();
 const stories = albums.filter((a) => a.dept === slug);
-const cover = stories.find((a) => a.cover)?.photos[0]?.src;
+const latest = stories.find((a) => a.cover);
+const cover = latest && (latest.lead ?? latest.photos.find((p) => !p.video))?.src;
 ---
 <Base title={g.title}>
   <PageHead eyebrow={g.en} title={g.title} sub={nav[2].items} />

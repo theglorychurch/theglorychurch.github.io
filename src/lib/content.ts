@@ -38,10 +38,14 @@ export function videoFor(note: { date: string } | undefined, videos: Video[]) {
 export type NoteBlock = { kind: 'h' | 'p' | 'gap'; text: string };
 export type Note = { id: string; title: string; date: string; ref: string; verse: string; body: NoteBlock[]; questions: string[] };
 export type Bulletin = { id: string; title: string; date: string; url: string; thumb: string };
-/** 앨범 속 사진 또는 영상. 영상이면 src는 드라이브 플레이어 주소다. */
-export type Photo = { id: string; src: string; thumb: string; video?: boolean };
+/** 앨범 속 사진 또는 영상. 영상이면 src는 바로 재생되는 파일 주소, embed는 대체용 드라이브 플레이어다. ratio는 가로/세로 비율이다. */
+export type Photo = { id: string; src: string; thumb: string; ratio: number; video?: boolean; embed?: string };
+/** 메인 슬라이드 한 장. 영상이면 소리 없이 자동 재생한다. */
+export type HeroItem = { src: string; video?: boolean; poster?: string };
+
+export const driveVideo = (id: string) => `https://drive.usercontent.google.com/download?id=${id}&export=download`;
 export type Dept = 'kids' | 'youth' | 'young-adults';
-export type Album = { id: string; title: string; date: string; cover: string; photos: Photo[]; text: string[]; dept?: Dept };
+export type Album = { id: string; title: string; date: string; cover: string; lead?: Photo; photos: Photo[]; text: string[]; dept?: Dept };
 
 /** 앨범 폴더 이름에 부서 이름이 들어 있으면 그 부서 페이지에도 보인다. */
 const DEPT_WORDS: [Dept, RegExp][] = [
@@ -80,13 +84,29 @@ function titleFrom(name: string) {
 
 export const driveImg = (id: string, w = 1600) => `https://lh3.googleusercontent.com/d/${id}=w${w}`;
 
-async function driveList(folder: string, extraQ = '') {
+type DriveFile = {
+  id: string; name: string; mimeType: string; createdTime: string;
+  imageMediaMetadata?: { width?: number; height?: number; rotation?: number };
+  videoMediaMetadata?: { width?: number; height?: number };
+};
+
+async function driveList(folder: string, extraQ = '', media = false): Promise<DriveFile[]> {
   const q = encodeURIComponent(`'${folder}' in parents and trashed=false${extraQ}`);
-  const fields = encodeURIComponent('files(id,name,mimeType,createdTime)');
+  const fields = encodeURIComponent(
+    `files(id,name,mimeType,createdTime${media ? ',imageMediaMetadata(width,height,rotation),videoMediaMetadata(width,height)' : ''})`,
+  );
   const data = await getJson(
     `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=name desc&pageSize=200&key=${GOOGLE_KEY}`,
   );
-  return data.files as { id: string; name: string; mimeType: string; createdTime: string }[];
+  return data.files;
+}
+
+/** 가로/세로 비율. 휴대폰 세로 사진은 회전값(1, 3)으로 저장되므로 뒤집어 계산한다. */
+function ratioOf(f: DriveFile) {
+  const m = f.imageMediaMetadata ?? f.videoMediaMetadata;
+  if (!m?.width || !m?.height) return 4 / 3;
+  const turned = f.imageMediaMetadata?.rotation === 1 || f.imageMediaMetadata?.rotation === 3;
+  return turned ? m.height / m.width : m.width / m.height;
 }
 
 const byDateDesc = <T extends { date: string }>(a: T, b: T) => b.date.localeCompare(a.date);
@@ -234,12 +254,17 @@ async function loadAlbums(): Promise<Album[]> {
   const folders = await driveList(FOLDERS.album!, " and mimeType='application/vnd.google-apps.folder'");
   const albums = await Promise.all(
     folders.map(async (f) => {
-      const files = (await driveList(f.id)).sort((a, b) => a.name.localeCompare(b.name));
-      const photos: Photo[] = files.flatMap((p) => {
-        if (p.mimeType.startsWith('image/')) return [{ id: p.id, src: driveImg(p.id, 2000), thumb: driveImg(p.id, 800) }];
-        if (p.mimeType.startsWith('video/')) return [{ id: p.id, src: `https://drive.google.com/file/d/${p.id}/preview`, thumb: driveImg(p.id, 800), video: true }];
+      const files = (await driveList(f.id, '', true)).sort((a, b) => a.name.localeCompare(b.name));
+      const media: Photo[] = files.flatMap((p) => {
+        const ratio = ratioOf(p);
+        if (p.mimeType.startsWith('image/')) return [{ id: p.id, src: driveImg(p.id, 2000), thumb: driveImg(p.id, 800), ratio }];
+        if (p.mimeType.startsWith('video/')) return [{ id: p.id, src: driveVideo(p.id), embed: `https://drive.google.com/file/d/${p.id}/preview`, thumb: driveImg(p.id, 800), ratio, video: true }];
         return [];
       });
+      // 대표 사진: 파일명이 "대표"로 시작하는 사진, 없으면 첫 가로 사진
+      const leadFile = files.find((p) => p.mimeType.startsWith('image/') && /^대표/.test(p.name));
+      const lead = media.find((p) => p.id === leadFile?.id) ?? media.find((p) => !p.video && p.ratio > 1.2);
+      const photos = media.filter((p) => p !== lead);
       // 폴더에 구글 문서가 있으면 그 내용을 앨범 소개글로 쓴다.
       const doc = files.find((p) => p.mimeType === 'application/vnd.google-apps.document');
       const text = doc ? await exportParagraphs(doc.id) : [];
@@ -247,14 +272,15 @@ async function loadAlbums(): Promise<Album[]> {
         id: f.id,
         title: titleFrom(f.name),
         date: dateFrom(f.name, f.createdTime),
-        cover: (photos.find((p) => !p.video) ?? photos[0])?.thumb ?? '',
+        cover: (lead ?? photos.find((p) => !p.video) ?? photos[0])?.thumb ?? '',
+        lead,
         photos,
         text,
         dept: deptOf(f.name),
       };
     }),
   );
-  return albums.filter((a) => a.photos.length).sort(byDateDesc);
+  return albums.filter((a) => a.lead || a.photos.length).sort(byDateDesc);
 }
 
 async function exportParagraphs(id: string) {
@@ -263,9 +289,13 @@ async function exportParagraphs(id: string) {
   return (await res.text()).replace(/^\uFEFF/, '').replace(/\r/g, '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 }
 
-async function loadMainPhotos(): Promise<string[]> {
-  const files = await driveList(FOLDERS.main!, isImage);
-  return files.map((f) => driveImg(f.id, 2000));
+async function loadMainPhotos(): Promise<HeroItem[]> {
+  const files = (await driveList(FOLDERS.main!)).sort((a, b) => a.name.localeCompare(b.name));
+  return files.flatMap((f) => {
+    if (f.mimeType.startsWith('image/')) return [{ src: driveImg(f.id, 2000) }];
+    if (f.mimeType.startsWith('video/')) return [{ src: driveVideo(f.id), video: true, poster: driveImg(f.id, 1200) }];
+    return [];
+  });
 }
 
 // ---------- Instagram ----------
@@ -336,11 +366,11 @@ const sample = {
   }),
   albums: ['주일예배', '주일학교 오후활동', '청년부 가을 소풍', '추수감사주일', '청소년부 수련회', '여름성경학교', '청년부 수련회', '전교인 야유회'].map((t, i) => ({
     id: `a${i}`, title: t, date: lastSunday(i), cover: '', dept: deptOf(t),
-    photos: Array.from({ length: 9 }, (_, j) => ({ id: `a${i}p${j}`, src: '', thumb: '' })),
+    photos: Array.from({ length: 9 }, (_, j) => ({ id: `a${i}p${j}`, src: '', thumb: '', ratio: j % 3 ? 0.75 : 1.5 })),
     text: [] as string[],
   })),
   posts: Array.from({ length: 6 }, (_, i) => ({ id: `p${i}`, img: '', url: '#', caption: '', date: daysAgo(i * 4) })),
-  mainPhotos: ['', '', '', ''],
+  mainPhotos: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }] as HeroItem[],
   notice: { text: '12월 24일 성탄 전야 예배는 오후 7시에 드립니다', link: '/about/worship/' } as Notice | undefined,
 };
 
@@ -355,14 +385,14 @@ async function loadAll() {
     safe('주보', GOOGLE_KEY && FOLDERS.bulletin, loadBulletins, sample.bulletins),
     safe('앨범', GOOGLE_KEY && FOLDERS.album, loadAlbums, sample.albums),
     safe('인스타', IG_TOKEN, loadInstagram, sample.posts),
-    safe('메인사진', GOOGLE_KEY && FOLDERS.main, loadMainPhotos, [] as string[]),
+    safe('메인사진', GOOGLE_KEY && FOLDERS.main, loadMainPhotos, [] as HeroItem[]),
     safe('공지', GOOGLE_KEY && NOTICE_DOC, loadNotice, sample.notice),
   ]);
 
   // 메인 사진: "메인" 폴더가 우선, 비어 있으면 최근 앨범 사진
-  const hero = mainPhotos.length
+  const hero: HeroItem[] = mainPhotos.length
     ? mainPhotos.slice(0, 6)
-    : albums.flatMap((a) => a.photos.filter((p) => !p.video).slice(0, 2).map((p) => p.src)).slice(0, 4);
+    : albums.flatMap((a) => [a.lead, ...a.photos].filter((p): p is Photo => !!p && !p.video).slice(0, 2).map((p) => ({ src: p.src }))).slice(0, 4);
 
   // 이번 주 말씀: 최신 설교요약 + 그 주일 이후 7일 안에 올라온 영상
   const note = notes[0];
