@@ -26,3 +26,8 @@ pnpm-debug.log*
 # 폰트 원본은 라이선스 문제로 저장소에 올리지 않는다
 *.otf
 *.ttf
+
+# 빌드할 때 만드는 영상 변환본
+.media-cache/
+public/media/
+src/data/media.json

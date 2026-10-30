@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "media": "node --env-file-if-exists=.env scripts/transcode-videos.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

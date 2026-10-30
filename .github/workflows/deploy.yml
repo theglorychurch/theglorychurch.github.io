@@ -27,6 +27,20 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      # 한 번 변환한 영상은 캐시에 두고 다음 빌드에서 다시 쓴다
+      - uses: actions/cache@v4
+        with:
+          path: .media-cache
+          key: media-${{ github.run_id }}
+          restore-keys: media-
+      - name: Transcode videos
+        run: node scripts/transcode-videos.mjs
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          DRIVE_ALBUM_FOLDER: ${{ vars.DRIVE_ALBUM_FOLDER }}
+          DRIVE_MAIN_FOLDER: ${{ vars.DRIVE_MAIN_FOLDER }}
       - run: npm run build
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}

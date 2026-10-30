@@ -1,6 +1,7 @@
 // 빌드할 때 유튜브, 구글 드라이브, 인스타그램에서 콘텐츠를 가져온다.
 // 연동 키가 없으면 예시 데이터로 화면을 그린다.
 
+import { readFileSync } from 'node:fs';
 import { church } from '../data/church';
 
 const env = import.meta.env;
@@ -43,7 +44,13 @@ export type Photo = { id: string; src: string; thumb: string; ratio: number; vid
 /** 메인 슬라이드 한 장. 영상이면 소리 없이 자동 재생한다. */
 export type HeroItem = { src: string; video?: boolean; poster?: string };
 
-export const driveVideo = (id: string) => `https://drive.usercontent.google.com/download?id=${id}&export=download`;
+/** scripts/transcode-videos.mjs 가 만든 H.264 변환본 목록 (파일 ID → 사이트 안 주소) */
+const transcoded: Record<string, string> = (() => {
+  try { return JSON.parse(readFileSync('src/data/media.json', 'utf8')); } catch { return {}; }
+})();
+
+/** 변환본이 있으면 그것을, 없으면 드라이브 원본(HEVC일 수 있음)을 쓴다. */
+export const driveVideo = (id: string) => transcoded[id] ?? `https://drive.usercontent.google.com/download?id=${id}&export=download`;
 export type Dept = 'kids' | 'youth' | 'young-adults';
 export type Album = { id: string; title: string; date: string; cover: string; lead?: Photo; photos: Photo[]; text: string[]; dept?: Dept };
 
