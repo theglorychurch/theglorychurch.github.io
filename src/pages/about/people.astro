@@ -8,21 +8,17 @@ const { pastor, staff } = people;
   <PageHead eyebrow="People" title="섬기는 사람들" sub={nav[0].items} />
 
   <section class="sec">
-    <div class="wrap">
+    <div class="wrap pastor">
       <figure class="family">
         <div class:list={['img', { ph: !pastor.photo }]}>{pastor.photo && <img class="cover" src={pastor.photo} alt={`${pastor.name} ${pastor.role} 가족`} />}</div>
         <figcaption>{pastor.name} {pastor.role}와 가족</figcaption>
       </figure>
-      <div class="pastor">
-        <div>
-          <span class="eyebrow gold">Senior Pastor</span>
-          <h2>{pastor.name} <small>{pastor.role}</small></h2>
-          <ul class="career">{pastor.career.map((c) => <li>{c}</li>)}</ul>
-        </div>
-        <div>
-          <div class="prose greeting">{pastor.greeting.map((p) => <p>{p}</p>)}</div>
-          <p class="sign">{pastor.role} {pastor.name} 드림</p>
-        </div>
+      <div>
+        <span class="eyebrow gold">Senior Pastor</span>
+        <h2>{pastor.name} <small>{pastor.role}</small></h2>
+        <ul class="career">{pastor.career.map((c) => <li>{c}</li>)}</ul>
+        <div class="prose greeting">{pastor.greeting.map((p) => <p>{p}</p>)}</div>
+        <p class="sign">{pastor.role} {pastor.name} 드림</p>
       </div>
     </div>
   </section>
@@ -39,12 +35,13 @@ const { pastor, staff } = people;
 
 <style>
   .gold { color: var(--gold); }
-  .family .img { aspect-ratio: 3/2; overflow: hidden; }
-  .family figcaption { margin-top: 12px; font-size: 13px; color: var(--muted); text-align: right; }
-  .pastor { display: grid; grid-template-columns: 1fr 1.4fr; gap: 72px; margin-top: 72px; align-items: start; }
+  .family { position: sticky; top: 120px; }
+  .family .img { aspect-ratio: 3/4; overflow: hidden; }
+  .family figcaption { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .pastor { display: grid; grid-template-columns: 420px 1fr; gap: 72px; align-items: start; }
   h2 { font-family: var(--head); font-size: 44px; font-weight: 800; margin-top: 14px; }
   h2 small { font-size: 20px; font-weight: 600; color: var(--muted); margin-left: 8px; }
-  .career { margin-top: 24px; padding: 20px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--hair); }
+  .career { margin: 24px 0 40px; padding: 20px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--hair); }
   .career li { font-size: 15px; line-height: 2; color: #444; }
   .career li::before { content: '—'; color: var(--gold); margin-right: 10px; }
   .greeting p:first-child { font-family: var(--head); font-size: 22px; font-weight: 700; color: var(--ink); }
@@ -56,9 +53,8 @@ const { pastor, staff } = people;
   .staff span { display: block; color: var(--muted); font-size: 14px; }
   .staff b { display: block; font-family: var(--head); font-size: 26px; font-weight: 800; margin-top: 10px; }
   @media (max-width: 760px) {
-    .family { margin: 0 calc(-1 * var(--gutter)); }
-    .family figcaption { padding: 0 var(--gutter); }
-    .pastor { grid-template-columns: 1fr; gap: 32px; margin-top: 40px; }
+    .family { position: static; }
+    .pastor { grid-template-columns: 1fr; gap: 32px; }
     h2 { font-size: 32px; }
     .greeting p:first-child { font-size: 18px; }
     .staff { grid-template-columns: 1fr 1fr; margin-top: -28px; }
