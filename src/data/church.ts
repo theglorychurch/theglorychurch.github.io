@@ -98,6 +98,7 @@ export const people = {
 export const nextgen = {
   kids: {
     en: 'Sunday School', title: '주일학교', when: '주일 오후 12:40',
+    photo: '/img/nextgen/kids.jpg',
     motto: '하나님의 사랑을 마음에 새기며, 말씀으로 자라나는 아이들',
     body: [
       '더글로리교회 주일학교는 하나님의 자녀로 부르심을 받은 어린이들이 하나님을 ‘아빠’로 친밀히 알아가며, 예수님의 사랑과 복음의 기쁨을 마음에 새기도록 돕는 신앙의 공동체입니다.',

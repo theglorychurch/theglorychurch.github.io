@@ -14,7 +14,8 @@ const g = nextgen[slug];
 const { albums } = await getContent();
 const stories = albums.filter((a) => a.dept === slug);
 const latest = stories.find((a) => a.cover);
-const cover = latest && (latest.lead ?? latest.photos.find((p) => !p.video))?.src;
+// 부서 대표 사진이 있으면 그것을, 없으면 그 부서의 최신 앨범 사진을 쓴다.
+const cover = ('photo' in g && g.photo) || (latest && (latest.lead ?? latest.photos.find((p) => !p.video))?.src);
 ---
 <Base title={g.title}>
   <PageHead eyebrow={g.en} title={g.title} sub={nav[2].items} />
@@ -45,6 +46,7 @@ const cover = latest && (latest.lead ?? latest.photos.find((p) => !p.video))?.sr
 <style>
   .intro-sec { padding-bottom: 0; }
   .hero-photo { aspect-ratio: 21/9; overflow: hidden; }
+  .hero-photo img { object-position: 50% 62%; }
   .body { display: grid; grid-template-columns: 1fr 1.2fr; gap: 72px; margin-top: 64px; }
   .motto { font-family: var(--head); font-size: 32px; font-weight: 700; line-height: 1.5; letter-spacing: -.02em; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 20px; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 15px; }
