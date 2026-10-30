@@ -73,7 +73,8 @@ export const vision = {
 
 export const people = {
   pastor: {
-    name: '안형모', role: '담임목사', photo: '',
+    name: '안형모', role: '담임목사',
+    photo: '', // 가족사진: public/img/people/pastor-family.jpg 에 넣고 '/img/people/pastor-family.jpg' 로 바꾼다
     career: [
       '총신대학교 기독교교육 전공',
       '횃불트리니티 신학대학원 목회학 석사(M.Div.)',
@@ -87,10 +88,10 @@ export const people = {
     ],
   },
   staff: [
-    { name: '최귀화', role: '원로목사', photo: '' },
-    { name: '강은숙', role: '전도사', photo: '' },
-    { name: '배을순', role: '전도사', photo: '' },
-    { name: '이범숙', role: '전도사', photo: '' },
+    { name: '최귀화', role: '원로목사' },
+    { name: '강은숙', role: '전도사' },
+    { name: '배을순', role: '전도사' },
+    { name: '이범숙', role: '전도사' },
   ],
 };
 

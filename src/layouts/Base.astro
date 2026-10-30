@@ -21,8 +21,14 @@ const isActive = (href: string, items: readonly { href: string }[]) =>
   <meta name="description" content={description} />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content="/img/og.png" />
+  <meta property="og:image" content={new URL('/img/og.png', Astro.site).href} />
+  <meta property="og:url" content={new URL(path, Astro.site).href} />
+  <meta property="og:site_name" content={church.name} />
+  <meta property="og:locale" content="ko_KR" />
   <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href={new URL(path, Astro.site).href} />
+  <link rel="sitemap" href="/sitemap-index.xml" />
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/img/favicon.png" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css" />
