@@ -1,6 +1,7 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import { getContent, fmtFull, type Album } from '../../../lib/content';
+import { nextgen } from '../../../data/church';
 
 export async function getStaticPaths() {
   const { albums } = await getContent();
@@ -8,35 +9,72 @@ export async function getStaticPaths() {
 }
 
 const { album } = Astro.props as { album: Album };
+const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[album.dept].title} 이야기` } : { href: '/news/album/', label: '교회앨범' };
 ---
-<Base title={album.title}>
+<Base title={album.title} description={album.text[0]?.slice(0, 120)}>
   <div class="wrap head">
-    <a class="back" href="/news/album/">← 교회앨범</a>
+    <a class="back" href={back.href}>← {back.label}</a>
     <span class="eyebrow date">{fmtFull(album.date)}</span>
     <h1>{album.title}</h1>
+    {album.text.length > 0 && <div class="prose text">{album.text.map((p) => <p>{p.split('\n').map((l, i) => <>{i > 0 && <br />}{l}</>)}</p>)}</div>}
   </div>
   <section class="wrap photos">
-    {album.photos.map((p) => (
-      <a href={p.src || undefined} target="_blank" rel="noopener" class:list={{ ph: !p.thumb }}>
+    {album.photos.map((p) => p.video ? (
+      <button class="item video" data-src={p.src} aria-label="영상 재생">
+        <img src={p.thumb} alt="" loading="lazy" /><span class="play" aria-hidden="true"></span>
+      </button>
+    ) : (
+      <a class:list={['item', { ph: !p.thumb }]} href={p.src || undefined} target="_blank" rel="noopener">
         {p.thumb && <img src={p.thumb} alt="" loading="lazy" />}
       </a>
     ))}
   </section>
+
+  <dialog class="player" aria-label="영상">
+    <button class="close" aria-label="닫기">×</button>
+    <div class="frame"><iframe title="앨범 영상" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+  </dialog>
 </Base>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('dialog.player')!;
+  const frame = dialog.querySelector('iframe')!;
+  document.querySelectorAll<HTMLButtonElement>('.item.video').forEach((b) =>
+    b.addEventListener('click', () => {
+      frame.src = b.dataset.src!;
+      dialog.showModal();
+    }),
+  );
+  const close = () => dialog.close();
+  dialog.querySelector('.close')!.addEventListener('click', close);
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
+  dialog.addEventListener('close', () => { frame.src = ''; });
+</script>
 
 <style>
   .head { padding-top: 64px; padding-bottom: 40px; }
   .back { font-size: 14px; color: var(--muted); }
   .date { display: block; margin-top: 40px; color: var(--gold); }
   h1 { font-family: var(--head); font-size: 48px; font-weight: 800; margin-top: 10px; letter-spacing: -.02em; }
+  .text { max-width: 760px; margin-top: 28px; }
   .photos { columns: 3; column-gap: 12px; padding-bottom: 110px; }
-  .photos a { display: block; margin-bottom: 12px; break-inside: avoid; }
-  .photos a.ph { aspect-ratio: 4/3; }
-  .photos img { width: 100%; }
+  .item { display: block; width: 100%; margin-bottom: 12px; break-inside: avoid; position: relative; border: 0; padding: 0; background: none; cursor: pointer; }
+  .item.ph { aspect-ratio: 4/3; }
+  .item img { width: 100%; }
+  .play { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(0, 0, 0, .55); }
+  .play::after { content: ''; position: absolute; left: 26px; top: 20px; border-left: 18px solid #fff; border-top: 12px solid transparent; border-bottom: 12px solid transparent; }
+  .video:hover .play { background: var(--gold); }
+  .player { border: 0; padding: 0; background: transparent; width: min(1000px, 92vw); max-height: 92vh; overflow: visible; }
+  .player::backdrop { background: rgba(0, 0, 0, .85); }
+  .frame { aspect-ratio: 16/9; background: #000; }
+  .frame iframe { width: 100%; height: 100%; border: 0; }
+  .close { position: absolute; top: -44px; right: 0; background: none; border: 0; color: #fff; font-size: 36px; line-height: 1; cursor: pointer; }
   @media (max-width: 760px) {
     .head { padding-top: 32px; }
     h1 { font-size: 30px; }
     .photos { columns: 2; column-gap: 6px; padding-bottom: 72px; }
-    .photos a { margin-bottom: 6px; }
+    .item { margin-bottom: 6px; }
+    .play { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+    .play::after { left: 19px; top: 14px; border-left-width: 14px; border-top-width: 10px; border-bottom-width: 10px; }
   }
 </style>

@@ -38,9 +38,10 @@ export function videoFor(note: { date: string } | undefined, videos: Video[]) {
 export type NoteBlock = { kind: 'h' | 'p' | 'gap'; text: string };
 export type Note = { id: string; title: string; date: string; ref: string; verse: string; body: NoteBlock[]; questions: string[] };
 export type Bulletin = { id: string; title: string; date: string; url: string; thumb: string };
-export type Photo = { id: string; src: string; thumb: string };
+/** 앨범 속 사진 또는 영상. 영상이면 src는 드라이브 플레이어 주소다. */
+export type Photo = { id: string; src: string; thumb: string; video?: boolean };
 export type Dept = 'kids' | 'youth' | 'young-adults';
-export type Album = { id: string; title: string; date: string; cover: string; photos: Photo[]; dept?: Dept };
+export type Album = { id: string; title: string; date: string; cover: string; photos: Photo[]; text: string[]; dept?: Dept };
 
 /** 앨범 폴더 이름에 부서 이름이 들어 있으면 그 부서 페이지에도 보인다. */
 const DEPT_WORDS: [Dept, RegExp][] = [
@@ -233,19 +234,33 @@ async function loadAlbums(): Promise<Album[]> {
   const folders = await driveList(FOLDERS.album!, " and mimeType='application/vnd.google-apps.folder'");
   const albums = await Promise.all(
     folders.map(async (f) => {
-      const files = await driveList(f.id, isImage);
-      const photos = files.sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({ id: p.id, src: driveImg(p.id, 2000), thumb: driveImg(p.id, 800) }));
+      const files = (await driveList(f.id)).sort((a, b) => a.name.localeCompare(b.name));
+      const photos: Photo[] = files.flatMap((p) => {
+        if (p.mimeType.startsWith('image/')) return [{ id: p.id, src: driveImg(p.id, 2000), thumb: driveImg(p.id, 800) }];
+        if (p.mimeType.startsWith('video/')) return [{ id: p.id, src: `https://drive.google.com/file/d/${p.id}/preview`, thumb: driveImg(p.id, 800), video: true }];
+        return [];
+      });
+      // 폴더에 구글 문서가 있으면 그 내용을 앨범 소개글로 쓴다.
+      const doc = files.find((p) => p.mimeType === 'application/vnd.google-apps.document');
+      const text = doc ? await exportParagraphs(doc.id) : [];
       return {
         id: f.id,
         title: titleFrom(f.name),
         date: dateFrom(f.name, f.createdTime),
-        cover: photos[0]?.thumb ?? '',
+        cover: (photos.find((p) => !p.video) ?? photos[0])?.thumb ?? '',
         photos,
+        text,
         dept: deptOf(f.name),
       };
     }),
   );
   return albums.filter((a) => a.photos.length).sort(byDateDesc);
+}
+
+async function exportParagraphs(id: string) {
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text/plain&key=${GOOGLE_KEY}`);
+  if (!res.ok) return [];
+  return (await res.text()).replace(/^\uFEFF/, '').replace(/\r/g, '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 }
 
 async function loadMainPhotos(): Promise<string[]> {
@@ -322,6 +337,7 @@ const sample = {
   albums: ['주일예배', '주일학교 오후활동', '청년부 가을 소풍', '추수감사주일', '청소년부 수련회', '여름성경학교', '청년부 수련회', '전교인 야유회'].map((t, i) => ({
     id: `a${i}`, title: t, date: lastSunday(i), cover: '', dept: deptOf(t),
     photos: Array.from({ length: 9 }, (_, j) => ({ id: `a${i}p${j}`, src: '', thumb: '' })),
+    text: [] as string[],
   })),
   posts: Array.from({ length: 6 }, (_, i) => ({ id: `p${i}`, img: '', url: '#', caption: '', date: daysAgo(i * 4) })),
   mainPhotos: ['', '', '', ''],
@@ -346,7 +362,7 @@ async function loadAll() {
   // 메인 사진: "메인" 폴더가 우선, 비어 있으면 최근 앨범 사진
   const hero = mainPhotos.length
     ? mainPhotos.slice(0, 6)
-    : albums.flatMap((a) => a.photos.slice(0, 2).map((p) => p.src)).slice(0, 4);
+    : albums.flatMap((a) => a.photos.filter((p) => !p.video).slice(0, 2).map((p) => p.src)).slice(0, 4);
 
   // 이번 주 말씀: 최신 설교요약 + 그 주일 이후 7일 안에 올라온 영상
   const note = notes[0];
