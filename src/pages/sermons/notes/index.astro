@@ -1,0 +1,42 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PageHead from '../../../components/PageHead.astro';
+import { nav } from '../../../data/church';
+import { getContent, fmtFull } from '../../../lib/content';
+const { notes, isNew } = await getContent();
+---
+<Base title="설교요약 & 기도">
+  <PageHead eyebrow="Notes & Prayer" title="설교요약 & 기도" desc="주일 설교의 요약과 기도문을 나눕니다." sub={nav[1].items} />
+
+  <section class="sec">
+    <div class="wrap">
+      <ul class="list">
+        {notes.map((n) => (
+          <li><a href={`/sermons/notes/${n.id}/`}>
+            <span class="date">{fmtFull(n.date)}</span>
+            <div>
+              <h2>{n.title} {isNew(n.date) && <span class="new">NEW</span>}</h2>
+              {n.ref && <p class="ref">{n.ref}</p>}
+            </div>
+            <span class="arrow">→</span>
+          </a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .list li a { display: grid; grid-template-columns: 180px 1fr auto; gap: 24px; align-items: baseline; padding: 30px 0; border-bottom: 1px solid var(--hair); }
+  .list li:first-child a { border-top: 1px solid var(--rule); }
+  .date { font-family: var(--head); font-weight: 300; font-size: 22px; }
+  h2 { font-family: var(--head); font-size: 24px; font-weight: 700; line-height: 1.4; }
+  .ref { margin-top: 6px; color: var(--gold); font-weight: 600; font-size: 14px; }
+  .arrow { font-size: 20px; }
+  a:hover h2 { text-decoration: underline; }
+  @media (max-width: 760px) {
+    .list li a { grid-template-columns: 1fr auto; gap: 6px 16px; padding: 22px 0; }
+    .date { grid-column: 1 / -1; font-size: 15px; }
+    h2 { font-size: 19px; }
+  }
+</style>

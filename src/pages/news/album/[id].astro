@@ -1,0 +1,42 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { getContent, fmtFull, type Album } from '../../../lib/content';
+
+export async function getStaticPaths() {
+  const { albums } = await getContent();
+  return albums.map((album) => ({ params: { id: album.id }, props: { album } }));
+}
+
+const { album } = Astro.props as { album: Album };
+---
+<Base title={album.title}>
+  <div class="wrap head">
+    <a class="back" href="/news/album/">← 교회앨범</a>
+    <span class="eyebrow date">{fmtFull(album.date)}</span>
+    <h1>{album.title}</h1>
+  </div>
+  <section class="wrap photos">
+    {album.photos.map((p) => (
+      <a href={p.src || undefined} target="_blank" rel="noopener" class:list={{ ph: !p.thumb }}>
+        {p.thumb && <img src={p.thumb} alt="" loading="lazy" />}
+      </a>
+    ))}
+  </section>
+</Base>
+
+<style>
+  .head { padding-top: 64px; padding-bottom: 40px; }
+  .back { font-size: 14px; color: var(--muted); }
+  .date { display: block; margin-top: 40px; color: var(--gold); }
+  h1 { font-family: var(--head); font-size: 48px; font-weight: 800; margin-top: 10px; letter-spacing: -.02em; }
+  .photos { columns: 3; column-gap: 12px; padding-bottom: 110px; }
+  .photos a { display: block; margin-bottom: 12px; break-inside: avoid; }
+  .photos a.ph { aspect-ratio: 4/3; }
+  .photos img { width: 100%; }
+  @media (max-width: 760px) {
+    .head { padding-top: 32px; }
+    h1 { font-size: 30px; }
+    .photos { columns: 2; column-gap: 6px; padding-bottom: 72px; }
+    .photos a { margin-bottom: 6px; }
+  }
+</style>

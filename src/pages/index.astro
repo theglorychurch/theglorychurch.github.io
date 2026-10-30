@@ -1,0 +1,257 @@
+---
+import Base from '../layouts/Base.astro';
+import { church, worship, vision } from '../data/church';
+import { getContent, fmtDot } from '../lib/content';
+import GloryToGlory from '../assets/script/glory-to-glory.svg?raw';
+
+const c = await getContent();
+const { note, video } = c.word;
+const featured = c.videos.find((v) => v.sermon) ?? c.videos[0];
+const quick = [
+  { t: '예배안내', href: '/about/worship/', arrow: '→' },
+  { t: '설교채널', href: church.youtube, arrow: '↗', ext: true },
+  { t: '오시는길', href: '/about/location/', arrow: '→' },
+  { t: '새가족안내', href: '/newcomer/', arrow: '→' },
+];
+---
+<Base>
+  <div class="wrap">
+    <section class="hero">
+      <div class="hero-text">
+        <div class="meta eyebrow"><span>{church.nameEn}</span><span>Since {church.founded}</span></div>
+        <h1>영광에서<br />영광으로</h1>
+        <div class="script-svg hero-sign" set:html={GloryToGlory} />
+        <p class="lead">하나님의 영광을 반사하는 공동체.<br />{church.name}에 오신 것을 환영합니다.</p>
+      </div>
+      <div class="slides" data-slides>
+        {c.hero.map((src, i) => (
+          <div class:list={['slide', { ph: !src, on: i === 0 }]}>{src && <img class="cover" src={src} alt="" loading={i ? 'lazy' : 'eager'} />}</div>
+        ))}
+        <span class="count"><b data-cur>01</b> / {String(c.hero.length).padStart(2, '0')}</span>
+      </div>
+    </section>
+  </div>
+
+  {note && (
+    <section class="word">
+      <div class="wrap">
+        <div>
+          <h2 class="word-title">이번 주 말씀</h2>
+          <div class="label eyebrow">{fmtDot(note.date)} 주일</div>
+        </div>
+        <div>
+          <blockquote>{note.verse || note.title}</blockquote>
+          <div class="ref">
+            {note.ref && <b>{note.ref}</b>}
+            {note.verse && <span>{note.title}</span>}
+            <a href={`/sermons/notes/${note.id}/`}>설교요약 읽기 →</a>
+            {video && <a href={video.url} target="_blank" rel="noopener">설교 영상 보기 →</a>}
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="eyebrow">Worship</span><h2>예배안내</h2></div><a class="more" href="/about/worship/">자세히 →</a></div>
+      <div class="times">
+        {worship.main.map((w) => (
+          <div><div class="num"><small>{w.ampm}</small>{w.time}</div><div class="name">{w.name}</div><div class="day">{w.day}</div></div>
+        ))}
+      </div>
+      <div class="times-sub">{worship.sub.map((s) => <span><b>{s.name}</b>{s.when}</span>)}</div>
+    </div>
+  </section>
+
+  <section class="sec vision">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="eyebrow">Vision</span><h2>그 영광, The Glory</h2></div><a class="more" href="/about/">교회소개 →</a></div>
+      <div class="pillars">
+        {vision.pillars.map((p, i) => (
+          <div><div class="eyebrow no">0{i + 1} — {p.en}</div><h3>{p.title}</h3><p>{p.body}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="sec quick-sec">
+    <div class="wrap">
+      <div class="quick">
+        {quick.map((q, i) => (
+          <a href={q.href} target={q.ext ? '_blank' : undefined} rel={q.ext ? 'noopener' : undefined}>
+            <span class="no">0{i + 1}</span><span class="t">{q.t}<i>{q.arrow}</i></span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="eyebrow">Sermon</span><h2>주일설교</h2></div>
+        <a class="more" href="/sermons/">전체 →</a>
+      </div>
+      <div class="sermon">
+        {featured && (
+          <a class="main-video" href={featured.url} target="_blank" rel="noopener">
+            <div class:list={['thumb', { 'ph-dark': !featured.thumb }]}>
+              {featured.thumb && <img class="cover" src={featured.thumb} alt="" loading="lazy" />}<span class="play"></span>
+            </div>
+            <div class="vmeta"><b>{featured.title}</b><p>{fmtDot(featured.date)} {c.isNew(featured.date) && <span class="new">NEW</span>}</p></div>
+          </a>
+        )}
+        <div class="shorts">
+          {c.shorts.slice(0, 3).map((s) => (
+            <a href={s.url} target="_blank" rel="noopener" class:list={['short', { 'ph-dark': !s.thumb }]} aria-label={s.title}>
+              {s.thumb && <img class="cover" src={s.thumb} alt="" loading="lazy" />}<span>Shorts</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" style="padding-top:0">
+    <div class="wrap two">
+      <div>
+        <div class="sec-head"><div><span class="eyebrow">Bulletin</span><h2>교회주보</h2></div><a class="more" href="/news/bulletin/">전체 →</a></div>
+        {!c.bulletins.length && <p class="empty">주보는 매주 주일에 올라옵니다.</p>}
+        <ul class="bulletin">
+          {c.bulletins.slice(0, 4).map((b) => (
+            <li><a href={b.url} target="_blank" rel="noopener">
+              <span class="d">{fmtDot(b.date)}</span>
+              <span class="t">{b.title} {c.isNew(b.date) && <span class="new">NEW</span>}</span>
+              <span class="go">보기 ↗</span>
+            </a></li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <div class="sec-head"><div><span class="eyebrow">News</span><h2>교회소식</h2></div>{church.instagram && <a class="more" href={church.instagram} target="_blank" rel="noopener">INSTAGRAM ↗</a>}</div>
+        <div class="ig">
+          {c.posts.slice(0, 6).map((p) => (
+            <a href={p.url} target="_blank" rel="noopener" class:list={{ ph: !p.img }} aria-label={p.caption.slice(0, 40) || '인스타그램 게시물'}>
+              {p.img && <img class="cover" src={p.img} alt="" loading="lazy" />}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const root = document.querySelector('[data-slides]');
+  const slides = root ? [...root.querySelectorAll('.slide')] : [];
+  const cur = root?.querySelector('[data-cur]');
+  let i = 0;
+  if (slides.length > 1) {
+    setInterval(() => {
+      slides[i].classList.remove('on');
+      i = (i + 1) % slides.length;
+      slides[i].classList.add('on');
+      if (cur) cur.textContent = String(i + 1).padStart(2, '0');
+    }, 5000);
+  }
+</script>
+
+<style>
+  .hero { display: grid; grid-template-columns: 1fr 1.05fr; gap: 64px; align-items: end; padding: 72px 0 80px; }
+  .meta { display: flex; justify-content: space-between; border-bottom: 1px solid var(--rule); padding-bottom: 12px; margin-bottom: 40px; }
+  .hero h1 { font-family: var(--head); font-weight: 800; font-size: 76px; line-height: 1.12; letter-spacing: -.03em; }
+  .hero-sign { width: 420px; max-width: 100%; margin: -4px 0 0 36px; transform: rotate(-6deg); transform-origin: left; }
+  .lead { margin-top: 36px; font-size: 16px; line-height: 1.85; color: #444; max-width: 440px; }
+  .slides { position: relative; aspect-ratio: 4/5; }
+  .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s; }
+  .slide.on { opacity: 1; }
+  .count { position: absolute; bottom: -30px; right: 0; font-size: 13px; letter-spacing: .15em; }
+
+  .word { background: var(--ink); color: var(--paper); }
+  .word .wrap { display: grid; grid-template-columns: 260px 1fr; gap: 64px; padding-top: 88px; padding-bottom: 88px; }
+  .word-title { font-family: var(--head); font-weight: 800; font-size: 40px; letter-spacing: -.02em; color: var(--gold-2); line-height: 1.2; }
+  .label { margin-top: 16px; color: #aaa; }
+  blockquote { font-family: var(--head); font-size: 30px; line-height: 1.65; font-weight: 500; letter-spacing: -.01em; }
+  blockquote::before { content: '“'; display: block; font-size: 90px; line-height: .6; color: var(--gold); margin-bottom: 12px; }
+  .ref { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: center; font-size: 14px; color: #bbb; }
+  .ref b { color: var(--paper); font-weight: 600; }
+  .ref a { border-bottom: 1px solid var(--gold); color: var(--gold-2); padding-bottom: 2px; }
+
+  .times { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .times > div { padding: 8px 28px 8px 0; border-right: 1px solid var(--hair); margin-right: 28px; }
+  .times > div:last-child { border: 0; margin: 0; }
+  .num { font-family: var(--head); font-weight: 300; font-size: 64px; line-height: 1; letter-spacing: -.02em; }
+  .num small { font-size: 18px; font-weight: 600; margin-right: 8px; }
+  .name { font-family: var(--head); font-weight: 700; font-size: 17px; margin-top: 14px; }
+  .day { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .times-sub { margin-top: 44px; display: flex; flex-wrap: wrap; gap: 10px 36px; font-size: 14px; color: #444; }
+  .times-sub b { font-weight: 700; color: var(--ink); margin-right: 8px; }
+
+  .vision { background: var(--paper-2); }
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
+  .pillars .no { color: var(--gold); }
+  .pillars h3 { font-family: var(--head); font-size: 26px; font-weight: 700; margin: 12px 0 16px; }
+  .pillars p { font-size: 15px; line-height: 1.85; color: #555; }
+
+  .quick-sec { padding-bottom: 0; }
+  .quick { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); }
+  .quick a { padding: 30px 24px 34px 0; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 40px; transition: background .2s; }
+  .quick a + a { padding-left: 24px; border-left: 1px solid var(--hair); }
+  .quick a:hover { background: var(--paper-2); }
+  .quick .no { font-family: var(--head); font-size: 16px; color: var(--muted); }
+  .quick .t { font-family: var(--head); font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; }
+  .quick .t i { font-style: normal; font-weight: 400; }
+
+  .sermon { display: grid; grid-template-columns: 1.6fr 1fr; gap: 40px; }
+  .thumb { aspect-ratio: 16/9; position: relative; background: #1b1b1b; }
+  .play { position: absolute; left: 50%; top: 50%; transform: translate(-40%, -50%); border-left: 26px solid #fff; border-top: 16px solid transparent; border-bottom: 16px solid transparent; }
+  .vmeta { margin-top: 18px; }
+  .vmeta b { font-family: var(--head); font-size: 20px; font-weight: 700; }
+  .vmeta p { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .shorts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start; }
+  .short { aspect-ratio: 9/16; position: relative; overflow: hidden; }
+  .short span { position: absolute; left: 10px; bottom: 10px; color: #fff; font-size: 11px; font-weight: 700; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
+  .bulletin a { display: grid; grid-template-columns: 110px 1fr auto; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--hair); }
+  .bulletin a:hover .t { text-decoration: underline; }
+  .bulletin .d { font-family: var(--head); font-weight: 300; font-size: 30px; line-height: 1; }
+  .bulletin .t { font-size: 15px; font-weight: 600; }
+  .bulletin .go { font-size: 13px; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 15px; padding: 8px 0; }
+  .ig { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .ig a { aspect-ratio: 1; overflow: hidden; }
+
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; gap: 0; padding: 0 0 56px; }
+    .slides { order: -1; margin: 0 calc(-1 * var(--gutter)); }
+    .count { bottom: 16px; right: 20px; background: var(--paper); padding: 4px 10px; }
+    .meta { margin: 24px 0; font-size: 10px; }
+    .hero h1 { font-size: 42px; }
+    .hero-sign { width: 250px; margin: -2px 0 0 12px; }
+    .lead { margin-top: 24px; font-size: 15px; }
+    .word .wrap { grid-template-columns: 1fr; gap: 20px; padding-top: 56px; padding-bottom: 60px; }
+    .word-title { font-size: 28px; }
+    .label { margin-top: 8px; }
+    blockquote { font-size: 21px; }
+    blockquote::before { font-size: 70px; }
+    .times { grid-template-columns: 1fr; row-gap: 24px; }
+    .times > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; border-bottom: 1px solid var(--hair) !important; padding-bottom: 20px; }
+    .times .num { grid-column: 2; grid-row: 1 / span 2; }
+    .times > div { margin-right: 0; padding-right: 0; border: 0; }
+    .num { font-size: 50px; }
+    .times-sub { flex-direction: column; gap: 10px; margin-top: 32px; }
+    .pillars { grid-template-columns: 1fr; gap: 36px; }
+    .pillars h3 { font-size: 22px; }
+    .quick { grid-template-columns: 1fr 1fr; }
+    .quick a, .quick a + a { padding: 22px 14px 24px 0; gap: 24px; border-left: 0; }
+    .quick a:nth-child(2n) { padding-left: 14px; border-left: 1px solid var(--hair); }
+    .quick .t { font-size: 19px; }
+    .sermon { grid-template-columns: 1fr; gap: 28px; }
+    .shorts { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 40%; overflow-x: auto; margin-right: calc(-1 * var(--gutter)); padding-right: var(--gutter); }
+    .two { grid-template-columns: 1fr; gap: 72px; }
+    .bulletin a { grid-template-columns: 76px 1fr auto; padding: 16px 0; }
+    .bulletin .d { font-size: 22px; }
+  }
+</style>

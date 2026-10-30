@@ -1,0 +1,22 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  desc?: string;
+  sub?: readonly { label: string; href: string }[];
+}
+const { eyebrow, title, desc, sub } = Astro.props;
+const path = Astro.url.pathname;
+---
+<header class="page-head">
+  <div class="wrap">
+    <span class="eyebrow">{eyebrow}</span>
+    <h1>{title}</h1>
+    {desc && <p>{desc}</p>}
+    {sub && (
+      <nav class="subnav" aria-label="하위 메뉴">
+        {sub.map((s) => <a href={s.href} aria-current={path === s.href ? 'page' : undefined}>{s.label}</a>)}
+      </nav>
+    )}
+  </div>
+</header>

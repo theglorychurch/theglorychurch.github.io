@@ -1,0 +1,47 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import { nav, worship } from '../../data/church';
+---
+<Base title="예배안내">
+  <PageHead eyebrow="Worship" title="예배안내" desc="누구나 오실 수 있습니다. 처음 오신 분도 편하게 예배에 함께해 주세요." sub={nav[0].items} />
+
+  <section class="sec">
+    <div class="wrap">
+      <ul class="table">
+        {worship.main.map((w) => (
+          <li><span class="name">{w.name}</span><span class="day">{w.day}</span><span class="num"><small>{w.ampm}</small>{w.time}</span></li>
+        ))}
+      </ul>
+      <div class="sec-head next"><div><span class="eyebrow">Gatherings</span><h2>기도회 · 다음세대 모임</h2></div></div>
+      <ul class="table small">
+        {worship.sub.map((s) => <li><span class="name">{s.name}</span><span class="day"></span><span class="when">{s.when}</span></li>)}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .table li { display: grid; grid-template-columns: 240px 1fr auto; align-items: baseline; padding: 28px 0; border-bottom: 1px solid var(--hair); }
+  .table li:first-child { border-top: 1px solid var(--rule); }
+  .name { font-family: var(--head); font-size: 26px; font-weight: 800; }
+  .day { color: var(--muted); font-size: 17px; }
+  .num { font-family: var(--head); font-weight: 300; font-size: 56px; line-height: 1; }
+  .num small { font-size: 18px; font-weight: 600; margin-right: 8px; }
+  .next { margin-top: 110px; }
+  .small li { grid-template-columns: 1fr auto; }
+  .small li:first-child { border-top: 0; }
+  .small .day { display: none; }
+  .small .name { font-size: 20px; }
+  .when { font-family: var(--head); font-size: 20px; font-weight: 500; }
+  @media (max-width: 760px) {
+    .table li { grid-template-columns: 1fr auto; row-gap: 4px; padding: 20px 0; }
+    .day { grid-row: 2; }
+    .num { grid-row: span 2; font-size: 40px; }
+    .name { font-size: 20px; }
+    .next { margin-top: 72px; }
+    .small li { grid-template-columns: 1fr; }
+    .small .day { display: none; }
+    .small .name, .when { font-size: 17px; }
+  }
+</style>

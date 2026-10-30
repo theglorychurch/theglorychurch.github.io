@@ -1,0 +1,41 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PageHead from '../../../components/PageHead.astro';
+import AlbumGrid from '../../../components/AlbumGrid.astro';
+import { nav, nextgen } from '../../../data/church';
+import { getContent } from '../../../lib/content';
+const { albums } = await getContent();
+const filters = [
+  { key: 'all', label: '전체' },
+  { key: 'church', label: '교회' },
+  ...Object.entries(nextgen).map(([key, g]) => ({ key, label: g.title })),
+];
+---
+<Base title="교회앨범">
+  <PageHead eyebrow="Album" title="교회앨범" desc="예배와 교회의 소중한 순간들을 나눕니다." sub={nav[3].items} />
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="filters" role="group" aria-label="앨범 분류">
+        {filters.map((f, i) => <button data-filter={f.key} aria-pressed={i === 0 ? 'true' : 'false'}>{f.label}</button>)}
+      </div>
+      <AlbumGrid albums={albums} />
+    </div>
+  </section>
+</Base>
+
+<script>
+  const btns = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelectorAll<HTMLElement>('[data-dept]').forEach((li) => {
+      li.hidden = b.dataset.filter !== 'all' && li.dataset.dept !== b.dataset.filter;
+    });
+  }));
+</script>
+
+<style>
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; }
+  .filters button { font: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; border: 1px solid var(--hair); background: var(--paper); border-radius: 30px; cursor: pointer; }
+  .filters button[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+</style>

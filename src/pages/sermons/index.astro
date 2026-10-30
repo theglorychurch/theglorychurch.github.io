@@ -1,0 +1,90 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import { church, nav } from '../../data/church';
+import { getContent, fmtFull } from '../../lib/content';
+const { videos, shorts, isNew } = await getContent();
+const latest = videos.find((v) => v.sermon) ?? videos[0];
+const rest = videos.filter((v) => v !== latest);
+---
+<Base title="주일예배">
+  <PageHead eyebrow="Sermon" title="주일예배" desc="주일 설교 영상은 매주 유튜브 채널에 올라옵니다." sub={nav[1].items} />
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="full">풀영상</button>
+        <button role="tab" aria-selected="false" data-tab="shorts">숏츠</button>
+        <a class="channel" href={church.youtube} target="_blank" rel="noopener">유튜브 채널 ↗</a>
+      </div>
+
+      <div data-panel="full">
+        {latest && (
+          <div class="latest">
+            <div class="player">
+              {latest.thumb
+                ? <iframe src={`https://www.youtube-nocookie.com/embed/${latest.id}`} title={latest.title} loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                : <div class="ph-dark fill"></div>}
+            </div>
+            <div class="latest-meta"><span class="eyebrow">Latest</span><h2>{latest.title}</h2><p>{fmtFull(latest.date)} {isNew(latest.date) && <span class="new">NEW</span>}</p></div>
+          </div>
+        )}
+        <ul class="grid">
+          {rest.map((v) => (
+            <li><a href={v.url} target="_blank" rel="noopener">
+              <div class:list={['thumb', { 'ph-dark': !v.thumb }]}>{v.thumb && <img class="cover" src={v.thumb} alt="" loading="lazy" />}</div>
+              <b>{v.title}</b><span>{fmtFull(v.date)}</span>
+            </a></li>
+          ))}
+        </ul>
+      </div>
+
+      <div data-panel="shorts" hidden>
+        <ul class="shorts">
+          {shorts.map((s) => (
+            <li><a href={s.url} target="_blank" rel="noopener" aria-label={s.title}>
+              <div class:list={['short', { 'ph-dark': !s.thumb }]}>{s.thumb && <img class="cover" src={s.thumb} alt="" loading="lazy" />}</div>
+              <span>{s.title}</span>
+            </a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[data-tab]');
+  tabs.forEach((t) => t.addEventListener('click', () => {
+    tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+    document.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== t.dataset.tab));
+  }));
+</script>
+
+<style>
+  .tabs { display: flex; gap: 24px; align-items: center; border-bottom: 1px solid var(--rule); margin-bottom: 44px; }
+  .tabs button { background: none; border: 0; font-family: var(--head); font-size: 18px; font-weight: 700; color: var(--muted); padding: 0 0 14px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs button[aria-selected='true'] { color: var(--ink); border-color: var(--ink); }
+  .channel { margin-left: auto; font-size: 13px; font-weight: 600; padding-bottom: 14px; }
+  .latest { display: grid; grid-template-columns: 1.7fr 1fr; gap: 48px; align-items: end; padding-bottom: 64px; border-bottom: 1px solid var(--hair); margin-bottom: 56px; }
+  .player { aspect-ratio: 16/9; background: #111; }
+  .player iframe, .fill { width: 100%; height: 100%; border: 0; }
+  .latest .eyebrow { color: var(--gold); }
+  .latest h2 { font-family: var(--head); font-size: 30px; font-weight: 800; line-height: 1.35; margin: 12px 0; }
+  .latest p { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px 28px; }
+  .thumb { aspect-ratio: 16/9; margin-bottom: 14px; overflow: hidden; }
+  .grid b { display: block; font-family: var(--head); font-size: 17px; font-weight: 700; line-height: 1.45; }
+  .grid span { color: var(--muted); font-size: 13px; }
+  .grid a:hover b { text-decoration: underline; }
+  .shorts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .short { aspect-ratio: 9/16; overflow: hidden; margin-bottom: 10px; }
+  .shorts span { font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  @media (max-width: 760px) {
+    .latest { grid-template-columns: 1fr; gap: 20px; padding-bottom: 40px; margin-bottom: 40px; }
+    .player { margin: 0 calc(-1 * var(--gutter)); }
+    .latest h2 { font-size: 22px; }
+    .grid { grid-template-columns: 1fr; gap: 32px; }
+    .shorts { grid-template-columns: 1fr 1fr; }
+  }
+</style>

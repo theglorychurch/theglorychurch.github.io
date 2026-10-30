@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 * * * *' # 매시 정각에 유튜브·드라이브·인스타 새 글을 반영
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          DRIVE_NOTES_FOLDER: ${{ vars.DRIVE_NOTES_FOLDER }}
+          DRIVE_BULLETIN_FOLDER: ${{ vars.DRIVE_BULLETIN_FOLDER }}
+          DRIVE_ALBUM_FOLDER: ${{ vars.DRIVE_ALBUM_FOLDER }}
+          DRIVE_MAIN_FOLDER: ${{ vars.DRIVE_MAIN_FOLDER }}
+          DRIVE_NOTICE_DOC: ${{ vars.DRIVE_NOTICE_DOC }}
+          INSTAGRAM_TOKEN: ${{ secrets.INSTAGRAM_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ vars.INSTAGRAM_USER_ID }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      # 커밋이 60일 없으면 GitHub가 예약 실행을 끄기 때문에, 꺼지지 않게 유지한다.
+      - uses: liskin/gh-workflow-keepalive@v1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

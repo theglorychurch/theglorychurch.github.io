@@ -1,0 +1,41 @@
+---
+import { fmtFull, NEW_DAYS, type Album } from '../lib/content';
+import { nextgen } from '../data/church';
+
+interface Props { albums: Album[]; showDept?: boolean }
+const { albums, showDept = true } = Astro.props;
+const fresh = new Date(Date.now() - NEW_DAYS * 864e5).toISOString().slice(0, 10);
+---
+<ul class="albums">
+  {albums.map((a) => (
+    <li data-dept={a.dept ?? 'church'}>
+      <a href={`/news/album/${a.id}/`}>
+        <div class:list={['img', { ph: !a.cover }]}>{a.cover && <img class="cover" src={a.cover} alt="" loading="lazy" />}</div>
+        <div class="tags">
+          {showDept && a.dept && <span class="tag">{nextgen[a.dept].title}</span>}
+          {a.date >= fresh && <span class="new">NEW</span>}
+        </div>
+        <div class="cap"><span>{fmtFull(a.date)} · 사진 {a.photos.length}장</span><b>{a.title}</b></div>
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .albums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 20px; }
+  .albums a { display: block; position: relative; }
+  .img { aspect-ratio: 4/3; overflow: hidden; }
+  .img img { transition: transform .5s; }
+  a:hover .img img { transform: scale(1.04); }
+  .tags { position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; }
+  .tag { font-size: 11px; font-weight: 700; background: var(--paper); color: var(--ink); padding: 4px 9px; border-radius: 20px; }
+  .cap { margin-top: 16px; }
+  .cap span { font-size: 13px; color: var(--muted); }
+  .cap b { display: block; font-family: var(--head); font-size: 20px; font-weight: 700; margin-top: 4px; line-height: 1.4; }
+  a:hover b { text-decoration: underline; }
+  @media (max-width: 760px) {
+    .albums { grid-template-columns: 1fr 1fr; gap: 28px 12px; }
+    .cap b { font-size: 16px; }
+    .tags { top: 8px; left: 8px; }
+  }
+</style>

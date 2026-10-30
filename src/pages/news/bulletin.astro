@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import { nav } from '../../data/church';
+import { getContent, fmtDot } from '../../lib/content';
+const { bulletins, isNew } = await getContent();
+---
+<Base title="교회주보">
+  <PageHead eyebrow="Bulletin" title="교회주보" desc="매주 주일 주보를 올립니다." sub={nav[3].items} />
+
+  <section class="sec">
+    <div class="wrap">
+      {!bulletins.length && <p class="empty">주보는 매주 주일에 올라옵니다.</p>}
+      <ul class="grid">
+        {bulletins.map((b) => (
+          <li><a href={b.url} target="_blank" rel="noopener">
+            <div class:list={['paper', { ph: !b.thumb }]}>{b.thumb && <img class="cover" src={b.thumb} alt={b.title} loading="lazy" />}</div>
+            <div class="meta"><span class="d">{fmtDot(b.date)}</span>{isNew(b.date) && <span class="new">NEW</span>}</div>
+            <b>{b.title}</b>
+          </a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .empty { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px 28px; }
+  .paper { aspect-ratio: 1/1.414; border: 1px solid var(--hair); overflow: hidden; margin-bottom: 16px; transition: transform .2s; }
+  a:hover .paper { transform: translateY(-4px); }
+  .meta { display: flex; align-items: center; gap: 10px; }
+  .d { font-family: var(--head); font-weight: 300; font-size: 28px; }
+  b { display: block; font-size: 14px; font-weight: 600; margin-top: 4px; color: #444; }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr 1fr; gap: 32px 16px; }
+    .d { font-size: 22px; }
+  }
+</style>

@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import { church, nav } from '../../data/church';
+const q = encodeURIComponent(`전북 ${church.address}`);
+---
+<Base title="오시는 길">
+  <PageHead eyebrow="Location" title="오시는 길" sub={nav[0].items} />
+
+  <section class="sec">
+    <div class="wrap">
+      <div class="map">
+        <iframe title="교회 위치 지도" src={`https://maps.google.com/maps?q=${q}&z=16&output=embed`} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <div class="info">
+        <dl>
+          <div><dt>주소</dt><dd>{church.address}</dd></div>
+          <div><dt>전화</dt><dd><a href={church.phoneHref}>{church.phone}</a></dd></div>
+        </dl>
+        <div class="btns">
+          <a class="btn solid" href={`https://map.naver.com/p/search/${q}`} target="_blank" rel="noopener">네이버 지도 ↗</a>
+          <a class="btn" href={`https://map.kakao.com/?q=${q}`} target="_blank" rel="noopener">카카오맵 ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .map { aspect-ratio: 21/9; border: 1px solid var(--rule); }
+  .map iframe { width: 100%; height: 100%; border: 0; filter: grayscale(1); }
+  .info { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap; margin-top: 40px; }
+  dl div { display: flex; gap: 28px; padding: 10px 0; }
+  dt { font-weight: 700; width: 40px; color: var(--muted); }
+  dd { font-family: var(--head); font-size: 22px; font-weight: 600; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  @media (max-width: 760px) {
+    .map { aspect-ratio: 1; margin: 0 calc(-1 * var(--gutter)); border-left: 0; border-right: 0; }
+    dd { font-size: 17px; }
+    dl div { gap: 16px; }
+  }
+</style>

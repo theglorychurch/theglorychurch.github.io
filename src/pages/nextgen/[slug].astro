@@ -1,0 +1,58 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import AlbumGrid from '../../components/AlbumGrid.astro';
+import { nav, nextgen } from '../../data/church';
+import { getContent, type Dept } from '../../lib/content';
+
+export function getStaticPaths() {
+  return Object.keys(nextgen).map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug as Dept;
+const g = nextgen[slug];
+const { albums } = await getContent();
+const stories = albums.filter((a) => a.dept === slug);
+const cover = stories.find((a) => a.cover)?.photos[0]?.src;
+---
+<Base title={g.title}>
+  <PageHead eyebrow={g.en} title={g.title} sub={nav[2].items} />
+
+  <section class="sec intro-sec">
+    <div class="wrap">
+      <div class:list={['hero-photo', { ph: !cover }]}>{cover && <img class="cover" src={cover} alt="" />}</div>
+      <div class="body">
+        <div>
+          <p class="motto">“{g.motto}”</p>
+          <dl><dt>모임</dt><dd>{g.when}</dd>{'sub' in g && <><dt>대상</dt><dd>{g.sub}</dd></>}</dl>
+        </div>
+        <div class="prose">{g.body.map((p) => <p>{p}</p>)}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec stories">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="eyebrow">Stories</span><h2>{g.title} 이야기</h2></div></div>
+      {stories.length
+        ? <AlbumGrid albums={stories} showDept={false} />
+        : <p class="empty">곧 {g.title}의 이야기가 올라옵니다.</p>}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro-sec { padding-bottom: 0; }
+  .hero-photo { aspect-ratio: 21/9; overflow: hidden; }
+  .body { display: grid; grid-template-columns: 1fr 1.2fr; gap: 72px; margin-top: 64px; }
+  .motto { font-family: var(--head); font-size: 32px; font-weight: 700; line-height: 1.5; letter-spacing: -.02em; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 20px; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 15px; }
+  dt { color: var(--muted); font-weight: 600; }
+  dd { font-weight: 700; }
+  .empty { color: var(--muted); padding: 40px 0; }
+  @media (max-width: 760px) {
+    .hero-photo { aspect-ratio: 4/3; margin: 0 calc(-1 * var(--gutter)); }
+    .body { grid-template-columns: 1fr; gap: 36px; margin-top: 36px; }
+    .motto { font-size: 22px; }
+  }
+</style>

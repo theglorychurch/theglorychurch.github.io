@@ -1,0 +1,62 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import { nav, people } from '../../data/church';
+const { pastor, staff } = people;
+---
+<Base title="섬기는 사람들">
+  <PageHead eyebrow="People" title="섬기는 사람들" sub={nav[0].items} />
+
+  <section class="sec">
+    <div class="wrap pastor">
+      <div class:list={['portrait', { ph: !pastor.photo }]}>{pastor.photo && <img class="cover" src={pastor.photo} alt={`${pastor.name} ${pastor.role}`} />}</div>
+      <div>
+        <span class="eyebrow gold">Senior Pastor</span>
+        <h2>{pastor.name} <small>{pastor.role}</small></h2>
+        <ul class="career">{pastor.career.map((c) => <li>{c}</li>)}</ul>
+        <div class="prose greeting">{pastor.greeting.map((p) => <p>{p}</p>)}</div>
+        <p class="sign">{people.pastor.role} {pastor.name} 드림</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec staff-sec">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="eyebrow">Ministers</span><h2>함께 섬기는 분들</h2></div></div>
+      <ul class="staff">
+        {staff.map((s) => (
+          <li>
+            <div class:list={['photo', { ph: !s.photo }]}>{s.photo && <img class="cover" src={s.photo} alt={`${s.name} ${s.role}`} loading="lazy" />}</div>
+            <b>{s.name}</b><span>{s.role}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .gold { color: var(--gold); }
+  .pastor { display: grid; grid-template-columns: 420px 1fr; gap: 72px; align-items: start; }
+  .portrait { aspect-ratio: 4/5; position: sticky; top: 120px; overflow: hidden; }
+  h2 { font-family: var(--head); font-size: 44px; font-weight: 800; margin-top: 14px; }
+  h2 small { font-size: 20px; font-weight: 600; color: var(--muted); margin-left: 8px; }
+  .career { margin: 24px 0 40px; padding: 20px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--hair); }
+  .career li { font-size: 15px; line-height: 2; color: #444; }
+  .career li::before { content: '—'; color: var(--gold); margin-right: 10px; }
+  .greeting p:first-child { font-family: var(--head); font-size: 22px; font-weight: 700; color: var(--ink); }
+  .sign { margin-top: 32px; font-family: var(--head); font-weight: 700; text-align: right; }
+  .staff-sec { padding-top: 0; }
+  .staff { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; }
+  .staff .photo { aspect-ratio: 3/4; margin-bottom: 16px; overflow: hidden; }
+  .staff b { font-family: var(--head); font-size: 20px; font-weight: 800; margin-right: 8px; }
+  .staff span { color: var(--muted); font-size: 14px; }
+  @media (max-width: 760px) {
+    .pastor { grid-template-columns: 1fr; gap: 32px; }
+    .portrait { position: static; }
+    h2 { font-size: 32px; }
+    .greeting p:first-child { font-size: 18px; }
+    .staff { grid-template-columns: 1fr 1fr; gap: 20px; }
+    .staff b { font-size: 17px; }
+  }
+</style>

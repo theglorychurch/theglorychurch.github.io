@@ -1,0 +1,68 @@
+@font-face { font-family:'Paperlogy'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-3Light.woff2') format('woff2'); font-weight:300; font-display:swap; }
+@font-face { font-family:'Paperlogy'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-4Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+@font-face { font-family:'Paperlogy'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-5Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+@font-face { font-family:'Paperlogy'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-6SemiBold.woff2') format('woff2'); font-weight:600; font-display:swap; }
+@font-face { font-family:'Paperlogy'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+@font-face { font-family:'Paperlogy'; src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2') format('woff2'); font-weight:800; font-display:swap; }
+
+:root {
+  --head: 'Paperlogy', Pretendard, sans-serif;
+  --ink: #111; --paper: #fff; --paper-2: #f6f4ef; --gold: #C49A2C; --gold-2: #E3B224;
+  --muted: #7a7a7a; --rule: #111; --hair: #e4e1da;
+  --gutter: 48px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { overflow-x: clip; font-family: Pretendard, 'Apple SD Gothic Neo', sans-serif; background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; word-break: keep-all; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+ul { list-style: none; }
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--gutter); }
+.eyebrow { font-size: 12px; letter-spacing: .22em; font-weight: 600; text-transform: uppercase; }
+.head { font-family: var(--head); }
+.script-svg { color: var(--gold); display: block; }
+.script-svg svg { display: block; width: 100%; height: auto; }
+
+/* 사진 자리표시 (연동 전) */
+.ph { background: repeating-linear-gradient(135deg, #d9d6cf 0 1px, #ebe8e2 1px 12px); }
+.ph-dark { background: linear-gradient(180deg, #3a3a3a, #111); }
+.cover { width: 100%; height: 100%; object-fit: cover; }
+
+/* 섹션 머리 */
+.sec { padding: 110px 0; }
+.sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rule); padding-bottom: 18px; margin-bottom: 44px; }
+.sec-head .eyebrow { color: var(--gold); display: block; margin-bottom: 10px; }
+.sec-head h2 { font-family: var(--head); font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+.sec-head .more { font-size: 13px; font-weight: 600; letter-spacing: .08em; white-space: nowrap; }
+
+.new { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--ink); background: var(--gold-2); padding: 3px 7px; border-radius: 20px; vertical-align: middle; }
+
+/* 하위 페이지 머리 */
+.page-head { padding: 88px 0 56px; border-bottom: 1px solid var(--rule); }
+.page-head .eyebrow { color: var(--gold); }
+.page-head h1 { font-family: var(--head); font-size: 64px; font-weight: 800; letter-spacing: -.03em; margin-top: 14px; line-height: 1.15; }
+.page-head p { margin-top: 18px; color: #555; font-size: 17px; line-height: 1.8; max-width: 640px; }
+.subnav { display: flex; gap: 28px; margin-top: 40px; font-family: var(--head); font-weight: 600; font-size: 15px; flex-wrap: wrap; }
+.subnav a { color: var(--muted); padding-bottom: 6px; }
+.subnav a[aria-current='page'] { color: var(--ink); border-bottom: 2px solid var(--ink); }
+
+.prose p { font-size: 17px; line-height: 1.95; color: #333; }
+.prose p + p { margin-top: 1.1em; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--head); font-weight: 700; font-size: 15px; padding: 14px 22px; border: 1px solid var(--ink); }
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn.solid { background: var(--ink); color: var(--paper); }
+.btn.solid:hover { background: var(--gold); border-color: var(--gold); }
+
+@media (max-width: 760px) {
+  :root { --gutter: 20px; }
+  .sec { padding: 72px 0; }
+  .sec-head { margin-bottom: 28px; }
+  .sec-head h2 { font-size: 26px; }
+  .page-head { padding: 52px 0 36px; }
+  .page-head h1 { font-size: 40px; }
+  .page-head p { font-size: 15px; }
+  .subnav { gap: 20px; margin-top: 28px; font-size: 14px; }
+  .prose p { font-size: 16px; }
+}
