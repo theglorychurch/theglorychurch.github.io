@@ -32,6 +32,21 @@ const isActive = (href: string, items: readonly { href: string }[]) =>
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/img/favicon.png" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css" />
+  {path === '/' && (
+    // 검색 결과에 교회 이름·주소·전화를 정확히 보여 주도록 구조화 데이터를 단다
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Church',
+      name: church.name,
+      alternateName: ['더글로리교회', church.nameEn],
+      url: Astro.site?.href,
+      logo: new URL('/img/logo.png', Astro.site).href,
+      image: new URL('/img/og.png', Astro.site).href,
+      telephone: '+82-63-254-2547',
+      address: { '@type': 'PostalAddress', streetAddress: '전미월평1길 12-2', addressLocality: '전주시 덕진구', addressRegion: '전북특별자치도', addressCountry: 'KR' },
+      sameAs: [church.youtube, church.instagram],
+    })} />
+  )}
 </head>
 <body>
   {notice && (
