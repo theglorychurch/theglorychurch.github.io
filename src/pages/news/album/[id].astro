@@ -23,7 +23,7 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
     {album.lead && (
       album.lead.video
         ? <button class="lead item video" data-src={album.lead.src} data-embed={album.lead.embed} aria-label="영상 재생"><img class="cover" src={album.lead.thumb} alt="" /><span class="play" aria-hidden="true"></span></button>
-        : <a class="lead item" href={album.lead.src} target="_blank" rel="noopener"><img class="cover" src={driveImgWide(album.lead.id)} alt="" /></a>
+        : <a class="lead item photo" href={album.lead.src} target="_blank" rel="noopener"><img class="cover" src={driveImgWide(album.lead.id)} alt="" /></a>
     )}
     <div class="collage">
       {album.photos.map((p) => (
@@ -33,7 +33,7 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
               <img class="cover" src={p.thumb} alt="" loading="lazy" /><span class="play" aria-hidden="true"></span>
             </button>
           ) : (
-            <a class:list={['item', { ph: !p.thumb }]} href={p.src || undefined} target="_blank" rel="noopener">
+            <a class:list={['item', { ph: !p.thumb, photo: !!p.src }]} href={p.src || undefined} target="_blank" rel="noopener">
               {p.thumb && <img class="cover" src={p.thumb} alt="" loading="lazy" />}
             </a>
           )}
@@ -45,6 +45,13 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
   <dialog class="player" aria-label="영상">
     <button class="close" aria-label="닫기">×</button>
     <div class="frame"><video controls playsinline></video><iframe title="앨범 영상" allow="autoplay; fullscreen" allowfullscreen hidden></iframe></div>
+  </dialog>
+
+  <dialog class="viewer" aria-label="사진 크게 보기">
+    <img alt="" />
+    <button class="nav prev" aria-label="이전 사진">‹</button>
+    <button class="nav next" aria-label="다음 사진">›</button>
+    <span class="count"></span>
   </dialog>
 </Base>
 
@@ -81,6 +88,51 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
     video.load();
     frame.src = '';
   });
+
+  // 사진 크게 보기: 좌우로 밀거나 화살표로 넘기고, 사진을 한 번 더 누르면 닫는다.
+  const viewer = document.querySelector<HTMLDialogElement>('dialog.viewer')!;
+  const img = viewer.querySelector('img')!;
+  const count = viewer.querySelector('.count')!;
+  const photos = [...document.querySelectorAll<HTMLAnchorElement>('a.photo')].map((a) => a.href);
+  let at = 0;
+  const show = (i: number) => {
+    at = (i + photos.length) % photos.length;
+    img.style.transform = '';
+    img.src = photos[at];
+    count.textContent = `${at + 1} / ${photos.length}`;
+    // 옆 사진을 미리 받아 두어 넘길 때 바로 보이게 한다
+    for (const d of [1, -1]) new Image().src = photos[(at + d + photos.length) % photos.length];
+  };
+  document.querySelectorAll<HTMLAnchorElement>('a.photo').forEach((a, i) =>
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      show(i);
+      viewer.showModal();
+    }),
+  );
+  viewer.querySelector('.prev')!.addEventListener('click', () => show(at - 1));
+  viewer.querySelector('.next')!.addEventListener('click', () => show(at + 1));
+  viewer.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') show(at - 1);
+    if (e.key === 'ArrowRight') show(at + 1);
+  });
+  let startX: number | null = null;
+  viewer.addEventListener('pointerdown', (e) => {
+    if ((e.target as Element).closest('.nav')) return;
+    startX = e.clientX;
+  });
+  viewer.addEventListener('pointermove', (e) => {
+    if (startX !== null) img.style.transform = `translateX(${e.clientX - startX}px)`;
+  });
+  viewer.addEventListener('pointerup', (e) => {
+    if (startX === null) return;
+    const dx = e.clientX - startX;
+    startX = null;
+    if (Math.abs(dx) > 50 && photos.length > 1) show(dx < 0 ? at + 1 : at - 1);
+    else if (Math.abs(dx) < 10) viewer.close();
+    else img.style.transform = '';
+  });
+  viewer.addEventListener('pointercancel', () => { startX = null; img.style.transform = ''; });
 </script>
 
 <style>
@@ -107,7 +159,17 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
   .frame iframe, .frame video { width: 100%; height: 100%; border: 0; display: block; }
   .frame [hidden] { display: none; }
   .close { position: absolute; top: -44px; right: 0; background: none; border: 0; color: #fff; font-size: 36px; line-height: 1; cursor: pointer; }
+  .viewer { border: 0; padding: 0; margin: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; background: rgba(0, 0, 0, .94); touch-action: pan-y; user-select: none; }
+  .viewer[open] { display: flex; align-items: center; justify-content: center; }
+  .viewer::backdrop { background: transparent; }
+  .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-out; -webkit-user-drag: none; pointer-events: none; }
+  .nav { position: absolute; top: 50%; width: 56px; height: 56px; margin-top: -28px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; font-size: 34px; line-height: 1; cursor: pointer; }
+  .nav:hover { background: var(--gold); }
+  .prev { left: 24px; }
+  .next { right: 24px; }
+  .count { position: absolute; bottom: 24px; left: 0; right: 0; text-align: center; color: rgba(255, 255, 255, .7); font-size: 14px; letter-spacing: .05em; }
   @media (max-width: 760px) {
+    .nav { display: none; }
     .head { padding-top: 32px; }
     h1 { font-size: 30px; }
     .gallery { padding-bottom: 72px; margin: 0; padding-left: 0; padding-right: 0; }
