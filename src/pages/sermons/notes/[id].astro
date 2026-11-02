@@ -20,7 +20,7 @@ const { note, prev, next, video } = Astro.props;
 ---
 <Base title={note.title} description={[note.ref, note.verse || note.body.find((b) => b.kind === 'p')?.text.slice(0, 120)].filter(Boolean).join(' · ')}>
   <article class="wrap note">
-    <a class="back" href="/sermons/notes/">← 설교요약 & 기도</a>
+    <a class="back" href="/sermons/notes/">← 설교요약 & 나눔</a>
     <span class="eyebrow date">{fmtFull(note.date)} 주일</span>
     <h1>{note.title}</h1>
     {note.ref && (

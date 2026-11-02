@@ -26,7 +26,7 @@ export const nav = [
   {
     label: '예배말씀', href: '/sermons/', badge: 'sermons', items: [
       { label: '주일예배', href: '/sermons/' },
-      { label: '설교요약 & 기도', href: '/sermons/notes/' },
+      { label: '설교요약 & 나눔', href: '/sermons/notes/' },
     ],
   },
   {
