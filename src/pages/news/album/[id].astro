@@ -1,5 +1,6 @@
 ---
 import Base from '../../../layouts/Base.astro';
+import Paragraphs from '../../../components/Paragraphs.astro';
 import { getContent, fmtFull, driveImg, type Album } from '../../../lib/content';
 import { nextgen } from '../../../data/church';
 
@@ -10,6 +11,11 @@ export async function getStaticPaths() {
 
 const { album } = Astro.props as { album: Album };
 const driveImgWide = (id: string) => driveImg(id, 2400);
+// 소개글의 "[사진]" 자리마다 사진을 고르게 나눠 넣는다. 표시가 없으면 글은 모두 맨 위에 둔다.
+const [intro = [], ...after] = album.parts;
+const groups = after.length || 1;
+const per = Math.ceil(album.photos.length / groups);
+const chunks = Array.from({ length: groups }, (_, i) => album.photos.slice(i * per, (i + 1) * per));
 const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[album.dept].title} 이야기` } : { href: '/news/album/', label: '교회앨범' };
 ---
 <Base title={album.title} description={album.text[0]?.slice(0, 120)}>
@@ -17,7 +23,7 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
     <a class="back" href={back.href}>← {back.label}</a>
     <span class="eyebrow date">{fmtFull(album.date)}</span>
     <h1>{album.title}</h1>
-    {album.text.length > 0 && <div class="prose text">{album.text.map((p) => <p>{p.split('\n').map((l, i) => <>{i > 0 && <br />}{l}</>)}</p>)}</div>}
+    {intro.length > 0 && <Paragraphs paras={intro} />}
   </div>
   <section class="wrap gallery">
     {album.lead && (
@@ -25,8 +31,9 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
         ? <button class="lead item video" data-src={album.lead.src} data-embed={album.lead.embed} aria-label="영상 재생"><img class="cover" src={album.lead.thumb} alt="" /><span class="play" aria-hidden="true"></span></button>
         : <a class="lead item photo" href={album.lead.src} target="_blank" rel="noopener"><img class="cover" src={driveImgWide(album.lead.id)} alt="" /></a>
     )}
+    {chunks.map((chunk, n) => (<>
     <div class="collage">
-      {album.photos.map((p) => (
+      {chunk.map((p) => (
         <div class="cell" style={`--r:${p.ratio.toFixed(3)}`}>
           {p.video ? (
             <button class="item video" data-src={p.src} data-embed={p.embed} aria-label="영상 재생">
@@ -40,6 +47,8 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
         </div>
       ))}
     </div>
+    {after[n]?.length > 0 && <div class="between"><Paragraphs paras={after[n]} /></div>}
+    </>))}
   </section>
 
   <dialog class="player" aria-label="영상">
@@ -140,7 +149,8 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
   .back { font-size: 14px; color: var(--muted); }
   .date { display: block; margin-top: 40px; color: var(--gold); }
   h1 { font-family: var(--head); font-size: 48px; font-weight: 800; margin-top: 10px; letter-spacing: -.02em; }
-  .text { max-width: 760px; margin-top: 28px; }
+  .between { padding: 48px 0 56px; }
+  .between :global(.text) { margin-top: 0; }
   .gallery { padding-bottom: 110px; }
   .item { display: block; width: 100%; height: 100%; position: relative; border: 0; padding: 0; background: #eee; cursor: pointer; overflow: hidden; }
   .item img { transition: transform .4s; }
@@ -148,6 +158,7 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
   .lead { aspect-ratio: 16/9; margin-bottom: 8px; }
   /* 행 높이를 맞춘 콜라주: 칸 너비를 사진 비율에 비례해 늘린다 */
   .collage { display: flex; flex-wrap: wrap; gap: 8px; }
+  .collage + .collage { margin-top: 8px; }
   .collage::after { content: ''; flex-grow: 999; }
   .cell { flex-grow: calc(var(--r) * 100); width: calc(var(--r) * 260px); aspect-ratio: var(--r); max-height: 520px; }
   .play { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(0, 0, 0, .55); }
@@ -175,6 +186,8 @@ const back = album.dept ? { href: `/nextgen/${album.dept}/`, label: `${nextgen[a
     .gallery { padding-bottom: 72px; margin: 0; padding-left: 0; padding-right: 0; }
     .lead { aspect-ratio: 4/3; margin-bottom: 4px; }
     .collage { gap: 4px; }
+    .collage + .collage { margin-top: 4px; }
+    .between { padding: 32px var(--gutter) 40px; }
     .cell { width: calc(var(--r) * 150px); }
     .play { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
     .play::after { left: 19px; top: 14px; border-left-width: 14px; border-top-width: 10px; border-bottom-width: 10px; }

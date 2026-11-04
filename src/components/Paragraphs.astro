@@ -1,0 +1,10 @@
+---
+// 줄바꿈을 살린 문단 묶음
+interface Props { paras: string[] }
+const { paras } = Astro.props;
+---
+<div class="prose text">{paras.map((p) => <p>{p.split('\n').map((l, i) => <>{i > 0 && <br />}{l}</>)}</p>)}</div>
+
+<style>
+  .text { max-width: 760px; margin-top: 28px; }
+</style>

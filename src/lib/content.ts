@@ -52,7 +52,7 @@ const transcoded: Record<string, string> = (() => {
 /** 변환본이 있으면 그것을, 없으면 드라이브 원본(HEVC일 수 있음)을 쓴다. */
 export const driveVideo = (id: string) => transcoded[id] ?? `https://drive.usercontent.google.com/download?id=${id}&export=download`;
 export type Dept = 'kids' | 'youth' | 'young-adults';
-export type Album = { id: string; title: string; date: string; cover: string; lead?: Photo; photos: Photo[]; text: string[]; dept?: Dept };
+export type Album = { id: string; title: string; date: string; cover: string; lead?: Photo; photos: Photo[]; text: string[]; parts: string[][]; dept?: Dept };
 
 /** 앨범 폴더 이름에 부서 이름이 들어 있으면 그 부서 페이지에도 보인다. */
 const DEPT_WORDS: [Dept, RegExp][] = [
@@ -274,7 +274,7 @@ async function loadAlbums(): Promise<Album[]> {
       const photos = media.filter((p) => p !== lead);
       // 폴더에 구글 문서가 있으면 그 내용을 앨범 소개글로 쓴다.
       const doc = files.find((p) => p.mimeType === 'application/vnd.google-apps.document');
-      const text = doc ? await exportParagraphs(doc.id) : [];
+      const parts = doc ? await exportParts(doc.id) : [];
       return {
         id: f.id,
         title: titleFrom(f.name),
@@ -282,7 +282,8 @@ async function loadAlbums(): Promise<Album[]> {
         cover: (lead ?? photos.find((p) => !p.video) ?? photos[0])?.thumb ?? '',
         lead,
         photos,
-        text,
+        text: parts.flat(),
+        parts,
         dept: deptOf(f.name),
       };
     }),
@@ -290,10 +291,21 @@ async function loadAlbums(): Promise<Album[]> {
   return albums.filter((a) => a.lead || a.photos.length).sort(byDateDesc);
 }
 
-async function exportParagraphs(id: string) {
+/**
+ * 앨범 소개글을 문단으로 나눈다. 문서에 "[사진]"만 적힌 줄이 있으면 그 자리에서 글을 끊고,
+ * 그 사이사이에 사진이 들어간다. 반환값의 칸 하나가 사진 묶음 사이의 글 한 덩어리다.
+ */
+export function splitAlbumText(text: string) {
+  return text.replace(/^\uFEFF/, '').replace(/\r/g, '')
+    .split(/^[ \t]*\[?사진\]?[ \t]*$/m)
+    .map((part) => part.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean));
+}
+
+async function exportParts(id: string) {
   const res = await fetch(`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text/plain&key=${GOOGLE_KEY}`);
   if (!res.ok) return [];
-  return (await res.text()).replace(/^\uFEFF/, '').replace(/\r/g, '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const parts = splitAlbumText(await res.text());
+  return parts.some((p) => p.length) ? parts : [];
 }
 
 async function loadMainPhotos(): Promise<HeroItem[]> {
@@ -375,6 +387,7 @@ const sample = {
     id: `a${i}`, title: t, date: lastSunday(i), cover: '', dept: deptOf(t),
     photos: Array.from({ length: 9 }, (_, j) => ({ id: `a${i}p${j}`, src: '', thumb: '', ratio: j % 3 ? 0.75 : 1.5 })),
     text: [] as string[],
+    parts: [] as string[][],
   })),
   posts: Array.from({ length: 6 }, (_, i) => ({ id: `p${i}`, img: '', url: '#', caption: '', date: daysAgo(i * 4) })),
   mainPhotos: [{ src: '' }, { src: '' }, { src: '' }, { src: '' }] as HeroItem[],
